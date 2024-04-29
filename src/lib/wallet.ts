@@ -1,12 +1,55 @@
 import Arweave from 'arweave'
 import fs from 'fs'
 import path from 'path'
+import Arbundles from "arbundles";
+
+const arweave = Arweave.init({})
 export async function generateWallet(walletName: string) {
-    let wallet = await Arweave.init({}).wallets.generate()
+    let wallet = await arweave.wallets.generate()
     fs.writeFileSync(path.resolve('wallets/', walletName + '.json'), JSON.stringify(wallet))
     return wallet
 }
 
-export async function getWallet() {
-    return ''
+async function getWalletKey() {
+    const res = await fetch('/wallet.json')
+    const key = await res.json()
+    return key
 }
+
+function createDataItemSigner(wallet: Arbundles.JWKInterface) {
+    const signer = async ({ data, tags, target, anchor }: any) => {
+        const signer = new Arbundles.ArweaveSigner(wallet)
+        const dataItem = Arbundles.createData(data, signer, { tags, target, anchor })
+        return dataItem.sign(signer)
+            .then(async () => ({
+                id: await dataItem.id,
+                raw: await dataItem.getRaw()
+            }))
+    }
+
+    return signer
+}
+export async function getJWKSigner() {
+    const key = await getWalletKey() as Arbundles.JWKInterface
+    const signer = new Arbundles.ArweaveSigner(key)
+    return signer
+}
+export async function connectArConnect() {
+
+}
+
+
+
+
+export async function arConnect {
+    console.log('arConnect');
+    const result = await (window as any).arweaveWallet
+        .connect(['SIGN_TRANSACTION', 'ACCESS_ADDRESS'])
+        .then(() => {
+        });
+};
+
+const arDisconnect = () => {
+    (window as any).arweaveWallet.disconnect().then(() => (connected.value = false));
+}
+

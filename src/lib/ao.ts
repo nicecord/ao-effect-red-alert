@@ -1,5 +1,6 @@
 import { connect, createDataItemSigner } from "@permaweb/aoconnect";
 
+import { getJWKSigner } from "./wallet"
 
 const { result, results, message, spawn, monitor, unmonitor, dryrun } = connect(
     {
@@ -27,12 +28,30 @@ export async function getTokenBalance(token: string, address: string) {
     return result.Messages[0].Data;
 }
 
-export async function transferToken(from: string, to: string, qty: string) {
-    const messageId = await message({
-        process: from,
-        signer: createDataItemSigner(window.arweaveWallet),
+
+export async function getCREDBalance(address: string) {
+    const result = await dryrun({
+        process: CRED,
         tags: [
-            { name: 'Action', value: 'TransferAOT' },
+            { name: 'Action', value: 'Balance' },
+            { name: 'Target', value: address },
+        ],
+    });
+
+    return result.Messages[0].Data;
+}
+
+export async function transferCRED(to: string, qty: string) {
+    return await transferToken(CRED, to, qty)
+}
+
+export async function transferToken(token: string, to: string, qty: string) {
+    // const signer = await getJWKSigner()
+    const messageId = await message({
+        process: token,
+        signer: createDataItemSigner(Aocon),
+        tags: [
+            { name: 'Action', value: 'Transfer' },
             { name: 'Recipient', value: to },
             { name: 'Quantity', value: qty },
         ],

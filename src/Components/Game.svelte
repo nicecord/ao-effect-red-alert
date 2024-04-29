@@ -1,6 +1,6 @@
 <script lang="ts">
 	// Create an array to represent the rows in the grid
-	import Player from './Player.svelte';
+	import Player from './Game.Bot.svelte';
 	import { getLatestLastTurn, getLatestGameState, type GameState, getPlayerByXY } from '$lib/game';
 	let lastestGameState: GameState | null = null;
 	let players: GameState['Players'];
@@ -34,6 +34,7 @@
 	<p>total player {Object.values(players).length}</p>
 	<p>latest game status date {new Date(getLatestLastTurn(players))}</p>
 	<p>{(Date.now() - getLatestLastTurn(players)) / 1000}</p>
+
 	<div class="grid">
 		{#each rows as row, rowIndex}
 			{#each row as cell, colIndex}

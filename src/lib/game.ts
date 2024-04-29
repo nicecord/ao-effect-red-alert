@@ -99,16 +99,17 @@ function isFriend(processId: string): boolean {
     }
 }
 
-const friendProcessList = [
-    'XSyAKUOXXsYI3sATGRuTW4uWF8Jhok25mJm1jQ1LITk', //乾
-    '9hQqBk5AEJDKvCcVwDotfdgQMUzuxQoON4mKvXkzpr0',//坤
-    'QSxypl2HPitYaPHPv9indZCo5s1Kpgvl8NyUnMZxVA0',//震
-    'KxEAayZTkUufuZXHztm0Nz1hGYilJR71sSD-9_iTNEg',//巽
-    'zZ-3GM0O_8eYpUYW4hqY0hmOwbfANLEh_Udk6pqP9yg',//坎
-    'A9z5thsmhURWHgLGabvGaBDpCLrbRZ8EG2jy7phbdr0',//离
-    '4Es_e1DSLDk4wicwO9-hmygj1ACGTy4Xkie59Tew-Yo',//艮
-    'cEbthI8hLlqzj4Q9aPgafeevSjcbotD2oRhxMBE_Y10'//兑
-]
+export function getControlledBots() {
+    return ['XSyAKUOXXsYI3sATGRuTW4uWF8Jhok25mJm1jQ1LITk', //乾
+        '9hQqBk5AEJDKvCcVwDotfdgQMUzuxQoON4mKvXkzpr0',//坤
+        'QSxypl2HPitYaPHPv9indZCo5s1Kpgvl8NyUnMZxVA0',//震
+        'KxEAayZTkUufuZXHztm0Nz1hGYilJR71sSD-9_iTNEg',//巽
+        'zZ-3GM0O_8eYpUYW4hqY0hmOwbfANLEh_Udk6pqP9yg',//坎
+        'A9z5thsmhURWHgLGabvGaBDpCLrbRZ8EG2jy7phbdr0',//离
+        '4Es_e1DSLDk4wicwO9-hmygj1ACGTy4Xkie59Tew-Yo',//艮
+        'cEbthI8hLlqzj4Q9aPgafeevSjcbotD2oRhxMBE_Y10'//兑
+    ]
+}
 
 const commanderProcessId = 'sPrj-GOt5fgfohZK5jCqh4ZfIn5cbD74RHgS9SX7KVE'
 
