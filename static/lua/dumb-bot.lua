@@ -1,7 +1,7 @@
--- Initializing global variables to store the latest game state and game host process.
-Game = Game or null
-CRED = CRED or "Sa0iBLPNyJQrwpTTG-tWLQU-1QeUAJA73DdxGGiKoJc"
+BotVersion = BotVersion or 0.1
+
 Commander = Commander or 'sPrj-GOt5fgfohZK5jCqh4ZfIn5cbD74RHgS9SX7KVE'
+
 PrizeEarned = PrizeEarned or 0
 EnemyKilled = EnemyKilled or 0
 ElimitedCount = ElimitedCount or 0
@@ -15,18 +15,15 @@ local function isAuthorized(msg)
 end
 
 
-Handler.add(
-    "GetBotState", Handler.utils.hasMatchingTag("Action", 'GetBotState'), function(msg)
-        if (isAuthorized(msg)) then
-            local json = require("json")
-            local GameState = json.encode({
-                Game = Game,
-                Commander = Commander,
-                PrizeEarned = PrizeEarned,
-
-            })
-            ao.send({ Target = msg.From, Action = 'GameState', Data = GameState })
-        end
+Handlers.add(
+    "GetBotState", Handlers.utils.hasMatchingTag("Action", 'GetBotState'), function(msg)
+        local json = require("json")
+        local BotState = json.encode({
+            Commander = Commander,
+            PrizeEarned = PrizeEarned,
+            BotVersion = BotVersion
+        })
+        ao.send({ Target = msg.From, Action = 'BotState', Data = BotState })
     end
 )
 -- Handler to trigger game state updates.
@@ -45,7 +42,7 @@ Handlers.add(
     Handlers.utils.hasMatchingTag("Action", "SetCommander"),
     function(msg)
         if (isAuthorized(msg)) then
-            Game = msg.Tag.Commander
+            Commander = msg.Tag.Commander
         end
     end
 )
@@ -54,7 +51,7 @@ Handlers.add(
     Handlers.utils.hasMatchingTag("Action", "Move"),
     function(msg)
         if (isAuthorized(msg)) then
-            ao.send({ Target = Game, Action = "PlayerMove", Direction = msg.Tags.Direction })
+            ao.send({ Target = msg.Tags.Game, Action = "PlayerMove", Direction = msg.Tags.Direction })
         end
     end
 )
@@ -64,7 +61,7 @@ Handlers.add(
     Handlers.utils.hasMatchingTag("Action", "Tick"),
     function(msg)
         if (isAuthorized(msg)) then
-            ao.send({ Target = Game, Action = "PlayerAttack", AttackEnergy = msg.Tags.AttackEnergy })
+            ao.send({ Target = msg.Tags.Game, Action = "PlayerAttack", AttackEnergy = msg.Tags.AttackEnergy })
         end
     end
 )
@@ -75,7 +72,7 @@ Handlers.add(
     function(msg)
         -- print(colors.gray .. "Getting game state..." .. colors.reset)
         if (isAuthorized(msg)) then
-            ao.send({ Target = Game, Action = "Withdraw" })
+            ao.send({ Target = msg.Tags.Game, Action = "Withdraw" })
         end
     end
 )
@@ -87,7 +84,7 @@ Handlers.add(
     Handlers.utils.hasMatchingTag("Action", "Join"),
     function(msg)
         if (isAuthorized(msg)) then
-            ao.send({ Target = CRED, Action = "Transfer", Quantity = "1000", Recipient = Game })
+            ao.send({ Target = msg.Tags.Token, Action = "Transfer", Quantity = "1000", Recipient = msg.Tags.Game })
         end
     end
 )
