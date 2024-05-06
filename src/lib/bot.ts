@@ -11,12 +11,14 @@ export async function getBotState(processId: string) {
 export function isValidBotName(name: string) {
 	return name.startsWith('b-');
 }
+
 export async function loadBotIntoProcess(process: string) {
 	const request = await fetch('/lua/dumb-bot.lua');
 	const code = await request.text();
 	const messageId = await evaluate(process, code);
 	return messageId;
 }
+
 export type BotType = {
 	name: string;
 	processId: string;

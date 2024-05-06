@@ -5,30 +5,18 @@
 	let lastestGameState: GameState | null = null;
 	let players: GameState['Players'];
 
-	setInterval(async () => {
-		const data = await getLatestGameState();
-		if (data && data.Players) {
-			console.log(data);
-			lastestGameState = data;
-			players = data.Players;
-		}
-	}, 5000);
-
-	let gridSize = 41;
-	let rows = Array.from({ length: gridSize }, () => new Array(gridSize).fill(null));
-
-	// Function to handle click on grid cells (or any other interaction)
-	function handleCellClick(x: number, y: number) {
-		// const player = getPlayerByXY(x, y, lastestGameState);
-		console.log(`Cell clicked: Row ${x}, Column ${y}`);
-		// Add logic here for what happens when a cell is clicked
-	}
+	const gameList = [
+		{ name: 'Bikini Bottom', processId: '7FoscACQw6exmtKGI87sVI4ls_klNIwuPRoHxpHSdOg' },
+		{ name: 'The Matrix', processId: 'y2SumslSgziUYIUYYlGXAXPcxLXexIkbaxxsNa9_VXg' },
+		{ name: 'Mario World', processId: 'oPre75iYJzWPiNkk_7B6QwmDPBSJIn9Rqrvil1Gho7U' },
+		{ name: 'Demo', processId: '' }
+	];
+	let selectedGame = gameList[3];
 </script>
 
 <p>{new Date()}</p>
 {#if !lastestGameState}
 	<p>initializing</p>
-{:else if lastestGameState?.GameMode !== 'Playing'}
 	<p>loading</p>
 {:else}
 	<p>total player {Object.values(players).length}</p>
@@ -48,6 +36,9 @@
 		{/each}
 	</div>
 {/if}
+{#key selectedGame.processId}
+	<GameGrid gameId={selectedGame.processId}></GameGrid>
+{/key}
 
 <style>
 	.grid {

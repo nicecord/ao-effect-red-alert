@@ -30,6 +30,14 @@ export async function getTokenBalance(token: string, address: string) {
 
 	return result.Messages[0].Data;
 }
+export async function getCREDBalance(address: string) {
+	const result = await dryrun({
+		process: CRED,
+		tags: [
+			{ name: 'Action', value: 'Balance' },
+			{ name: 'Target', value: address }
+		]
+	});
 
 export async function getCREDBalance(address: string) {
 	const result = await dryrun({
@@ -63,8 +71,19 @@ export async function transferToken(token: string, to: string, qty: string) {
 	return messageId;
 }
 
+export async function transferToken(token: string, to: string, qty: string) {
+	const messageId = await sendAOMessage('', token, [
+		{ name: 'Action', value: 'Transfer' },
+		{ name: 'Recipient', value: to },
+		{ name: 'Quantity', value: qty }
+	]);
+
+	console.log('transferToken:', messageId);
+	return messageId;
+}
+
 export async function sendAOMessage(
-	sender: string,
+	from: string,
 	targetProcess: string,
 	tags: { name: string; value: string }[]
 ) {

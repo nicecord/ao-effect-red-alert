@@ -53,3 +53,29 @@ const arDisconnect = () => {
     (window as any).arweaveWallet.disconnect().then(() => (connected.value = false));
 }
 
+<<<<<<< HEAD
+=======
+export async function getArConnectActiveWallet() {
+	let address;
+	try {
+		address = await window.arweaveWallet.getActiveAddress();
+	} catch (error) {
+		return '';
+	}
+
+	return address;
+}
+
+export async function arConnect() {
+	try {
+		await window.arweaveWallet.connect(['SIGN_TRANSACTION', 'ACCESS_ADDRESS']);
+		return await getArConnectActiveWallet();
+	} catch (e) {
+		console.log(e);
+		return '';
+	}
+}
+
+export async function arDisconnect() {
+	await window.arweaveWallet.disconnect();
+}

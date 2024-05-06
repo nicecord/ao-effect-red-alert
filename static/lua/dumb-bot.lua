@@ -1,7 +1,6 @@
-BotVersion = BotVersion or 0.1
-
+BotVersion = 0.2
 Commander = Commander or 'sPrj-GOt5fgfohZK5jCqh4ZfIn5cbD74RHgS9SX7KVE'
-
+CRED = CRED or 'Sa0iBLPNyJQrwpTTG-tWLQU-1QeUAJA73DdxGGiKoJc'
 PrizeEarned = PrizeEarned or 0
 EnemyKilled = EnemyKilled or 0
 ElimitedCount = ElimitedCount or 0
@@ -58,7 +57,7 @@ Handlers.add(
 
 Handlers.add(
     "Attack",
-    Handlers.utils.hasMatchingTag("Action", "Tick"),
+    Handlers.utils.hasMatchingTag("Action", "Attack"),
     function(msg)
         if (isAuthorized(msg)) then
             ao.send({ Target = msg.Tags.Game, Action = "PlayerAttack", AttackEnergy = msg.Tags.AttackEnergy })
@@ -84,7 +83,7 @@ Handlers.add(
     Handlers.utils.hasMatchingTag("Action", "Join"),
     function(msg)
         if (isAuthorized(msg)) then
-            ao.send({ Target = msg.Tags.Token, Action = "Transfer", Quantity = "1000", Recipient = msg.Tags.Game })
+            ao.send({ Target = CRED, Action = "Transfer", Quantity = "1000", Recipient = msg.Tags.Game })
         end
     end
 )
