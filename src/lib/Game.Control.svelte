@@ -2,6 +2,7 @@
 	import Bot from './Game.Control.Bot.svelte';
 	import Settings from './Game.Control.Settings.svelte';
 	import { type Player } from './Game.Grid';
+	import { isWalletConnected, activeAddress } from './stores/wallet';
 	export let players: Player[];
 
 	let activeTab = 'manage';
@@ -63,6 +64,7 @@
 					processId={player.processId}
 					health={player.health}
 					energy={player.energy}
+					lastTurn={player.lastTurn}
 				/>
 			{/each}
 		</ul>

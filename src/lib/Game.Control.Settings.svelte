@@ -1,35 +1,26 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import Bot from './Game.Setting.Bot.svelte';
-	import {
-		addMyBotProcess,
-		getMyBotProcesses,
-		removeMyBotProcess,
-		type BotLocalSetting
-	} from './Game.Setting';
-	let activeAddress: string = '';
-	let myBotProcesses: BotLocalSetting[] = [];
-
+	import Player from './Game.Control.Setting.Player.svelte';
+	import { myPlayerProcesses, removeMyPlayerProcess } from './stores/game';
+	import { isWalletConnected, activeAddress } from './stores/wallet';
+	import FormAddMyPlayer from './Form.AddMyBot.svelte';
 	function handleRemoveBot(botProcessId: string) {
-		myBotProcesses = removeMyBotProcess(botProcessId);
+		removeMyPlayerProcess(botProcessId);
 	}
 	// Function to handle form submission with types specified
-	// Add code to handle
-	onMount(() => {
-		myBotProcesses = getMyBotProcesses();
-	});
 </script>
 
-<div class="m-2">
-	{#if myBotProcesses.length === 0}
-		<span> No bots added yet </span>
-	{:else}
-		<div class="flex flex-wrap">
-			{#each myBotProcesses as process}
-				<Bot {...process} onRemove={handleRemoveBot} />
-			{/each}
-		</div>
-	{/if}
+{#if !$activeAddress?.eligible}
+	<div class="mt-2 rounded bg-blue-50 p-2 text-sm text-gray-400">
+		<p>To be eligible to use the full feature, you must hold at least 0.2 TRUNK tokens.</p>
+	</div>
+{/if}
+<div class="mb-4 flex flex-col flex-wrap rounded bg-white shadow-lg">
+	{#each $myPlayerProcesses as process}
+		<Player {...process} onRemove={handleRemoveBot} />
+	{/each}
+</div>
+<div>
+	<FormAddMyPlayer />
 </div>
 
 <style>

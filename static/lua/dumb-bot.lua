@@ -1,12 +1,11 @@
-BotVersion = 0.2
-Commander = Commander or 'sPrj-GOt5fgfohZK5jCqh4ZfIn5cbD74RHgS9SX7KVE'
+Variant = "0.2"
 CRED = CRED or 'Sa0iBLPNyJQrwpTTG-tWLQU-1QeUAJA73DdxGGiKoJc'
 PrizeEarned = PrizeEarned or 0
 EnemyKilled = EnemyKilled or 0
 ElimitedCount = ElimitedCount or 0
 
 local function isAuthorized(msg)
-    if (msg.From == Owner or msg.From == Commander) then
+    if (msg.From == Owner) then
         return true
     else
         return false
@@ -18,33 +17,13 @@ Handlers.add(
     "GetBotState", Handlers.utils.hasMatchingTag("Action", 'GetBotState'), function(msg)
         local json = require("json")
         local BotState = json.encode({
-            Commander = Commander,
             PrizeEarned = PrizeEarned,
-            BotVersion = BotVersion
+            BotVersion = Variant
         })
         ao.send({ Target = msg.From, Action = 'BotState', Data = BotState })
     end
 )
--- Handler to trigger game state updates.
-Handlers.add(
-    "SetGameId",
-    Handlers.utils.hasMatchingTag("Action", "SetGameId"),
-    function(msg)
-        if (isAuthorized(msg)) then
-            Game = msg.Tags.GameId
-        end
-    end
-)
 
-Handlers.add(
-    "SetCommander",
-    Handlers.utils.hasMatchingTag("Action", "SetCommander"),
-    function(msg)
-        if (isAuthorized(msg)) then
-            Commander = msg.Tag.Commander
-        end
-    end
-)
 Handlers.add(
     "Move",
     Handlers.utils.hasMatchingTag("Action", "Move"),

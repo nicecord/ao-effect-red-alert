@@ -1,7 +1,7 @@
 import { dryrunAo, evaluate } from './ao';
 
 export async function getBotState(processId: string) {
-	const result = await dryrunAo('', processId, [{ name: 'Action', value: 'GetBotState' }]);
+	const result = await dryrunAo(processId, [{ name: 'Action', value: 'GetBotState' }]);
 	const state = result.Messages[0].Data;
 	return JSON.parse(state);
 }

@@ -5,13 +5,7 @@
 	let lastestGameState: GameState | null = null;
 	let players: GameState['Players'];
 
-	const gameList = [
-		{ name: 'Bikini Bottom', processId: '7FoscACQw6exmtKGI87sVI4ls_klNIwuPRoHxpHSdOg' },
-		{ name: 'The Matrix', processId: 'y2SumslSgziUYIUYYlGXAXPcxLXexIkbaxxsNa9_VXg' },
-		{ name: 'Mario World', processId: 'oPre75iYJzWPiNkk_7B6QwmDPBSJIn9Rqrvil1Gho7U' },
-		{ name: 'Demo', processId: '' }
-	];
-	let selectedGame = gameList[3];
+	import { selectedGameId } from './stores/game';
 </script>
 
 <p>{new Date()}</p>

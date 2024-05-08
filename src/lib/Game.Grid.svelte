@@ -8,25 +8,26 @@
 		type Player,
 		getPlayers,
 		type Cell,
-		getCellIdByXY
+		getCellIdByXY,
+		playerWithdraw,
+		getPlayerMoveDirection,
+		playerMove
 	} from './Game.Grid';
 	import GameControl from './Game.Control.svelte';
-	import { getMyBotProcesses } from './Game.Setting';
-	import { addRandomBot } from './GameState.Mock';
-	import { findPath, findSimplePath } from './utils/path';
-
+	import { findPath } from './utils/path';
+	import { myPlayerProcesses } from './stores/game';
+	import Title from './Game.Grid.Title.svelte';
+	import { getMockPlayers } from './GameState.Mock';
 	export let gameId = '';
 	let cells = generateGridCells();
 	let players: Player[] = [];
-	let myBotProcesses: { name: string; processId: string }[] = [];
 	let selectedPlayerId: string = '';
 	let selectedCellId: number | undefined;
-	$: isDemoMode = !gameId;
-	$: updatePlayers(players, myBotProcesses);
+	let paths: number[] = [];
+	// $: isDemoMode = !gameId;
 	$: updateCells(players);
-	$: paths = pathToTarget(selectedPlayerId, selectedCellId, cells);
+	$: updatePlayers(players, $myPlayerProcesses);
 
-	function autoMove(paths) {}
 	function pathToTarget(playerId: string, goal: number | undefined, cells: Cell[]) {
 		if (!selectedPlayerId || goal === undefined) {
 			return [];
@@ -42,15 +43,18 @@
 
 	function updateCells(players: Player[]) {
 		const dangerousCells = getAllCellsInAttackingRange(players);
+		for (const cell of cells) {
+			cell.isDangerous = false;
+		}
 		for (let cellId of dangerousCells) {
 			cells[cellId].isDangerous = true;
 		}
 	}
-	// Function to add a bot to the grid
-	function updatePlayers(players: Player[], myProcess: typeof myBotProcesses) {
-		players = players.map((player) => ({
-			...player,
-			my: myProcess.some((process) => process.processId === player.processId)
+
+	function updatePlayers(input: Player[], myProcess: typeof $myPlayerProcesses) {
+		players = input.map((p) => ({
+			...p,
+			my: myProcess.some((process) => process.processId === p.processId)
 		}));
 	}
 
@@ -76,9 +80,25 @@
 			}
 		}
 
-		// Handle the click event on the grid cell
-		// You can now perform actions based on the clicked cell
+		if (selectedCellId && selectedPlayerId) {
+			const plannedPaths = pathToTarget(selectedPlayerId, selectedCellId, cells);
+
+			if (plannedPaths.length < 2) {
+				return;
+			}
+			paths = plannedPaths;
+			const moveDirection = getPlayerMoveDirection(plannedPaths[0], plannedPaths[1]);
+			if (moveDirection) {
+				console.log('playing moving', selectedPlayerId, moveDirection);
+				playerMove(selectedPlayerId, gameId, moveDirection).then((m) =>
+					console.log('moving message id', m)
+				);
+			}
+		}
 	}
+
+	// Handle the click event on the grid cell
+	// You can now perform actions based on the clicked cell
 
 	function clickBot(id: string) {
 		const bot = getBotById(id);
@@ -100,24 +120,34 @@
 		}
 	}
 
-	onMount(() => {
-		myBotProcesses = getMyBotProcesses();
-		if (isDemoMode) {
-			for (let i = 0; i < 25; i++) {
-				players = addRandomBot();
-			}
+	async function attack(id: string) {
+		const bot = getBotById(id);
+		if (bot) {
+			const messageId = await playerAttack(id, '', gameId, bot.energy);
+			console.log('attack meesage id', messageId);
 		}
+	}
 
-		return;
+	async function withdraw(id: string) {
+		const bot = getBotById(id);
+		if (bot) {
+			const messageId = await playerWithdraw(id, gameId);
+			console.log('withdraw', messageId);
+		}
+	}
+	onMount(() => {
+		getPlayers(gameId).then((p) => {
+			players = p;
+		});
 		const interval = setInterval(async () => {
 			players = await getPlayers(gameId);
-		}, 10000);
+		}, 3000);
 
 		return () => clearInterval(interval);
 	});
 </script>
 
-<h1 class="text-1xl m-4 text-center">game: {gameId}</h1>
+<Title />
 <div class="ml-2 flex border">
 	<div class="relative">
 		<div
@@ -139,6 +169,25 @@
 		</div>
 
 		{#each players as bot}
+			{#if bot.processId === selectedPlayerId}
+				<div
+					class="options-popup"
+					style="top: {(bot.x - 1) * 20 - 20}px; left: {(bot.y - 1) * 20 + 20}px"
+				>
+					<button
+						on:click|stopPropagation={async () => await withdraw(bot.processId)}
+						class="icon-button"
+					>
+						<i class="fas fa-door-open" style="color: green;"></i>
+					</button>
+					<button
+						on:click|stopPropagation={async () => await attack(bot.processId)}
+						class="icon-button"
+					>
+						<i class="fa fa-bolt" style="color: red;"></i>
+					</button>
+				</div>
+			{/if}
 			<button
 				class:isMy={bot.my}
 				class:isSelected={bot.processId === selectedPlayerId}
@@ -159,12 +208,12 @@
 			</button>
 		{/each}
 	</div>
-	<div class="ml-1 max-w-96 border border-red-400">
+	<div class="ml-1 w-96 border">
 		<GameControl {players} />
 	</div>
 </div>
 
-<style>
+<style lang="postcss">
 	@keyframes dangerousZone {
 		0%,
 		100% {
@@ -205,8 +254,8 @@
 	}
 
 	.cell.isDangerous {
-		background-color: red;
-		animation: dangerousZone 1s infinite;
+		@apply /*
+		animation: dangerousZone 1s infinite; */ bg-red-100;
 	}
 	.health-meter {
 		width: 100%;
@@ -231,7 +280,27 @@
 
 	.energy-progress {
 		height: 100%;
-		background-color: red;
+		background-color: blue;
 		transition: width 0.3s ease-in-out;
+	}
+	.options-popup {
+		position: absolute;
+		background-color: rgba(255, 255, 255, 0.9); /* Semi-transparent white */
+		/* border: 1px solid #ccc; */
+		padding: 2px;
+		border-radius: 5px;
+		box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+		display: flex;
+	}
+	.icon-button {
+		background: none;
+		border: none;
+		cursor: pointer;
+		color: #333; /* Icon color */
+		font-size: 20px; /* Adjust size as needed */
+		margin: 0 5px;
+	}
+	.icon-button:hover {
+		color: #666; /* Darker color on hover */
 	}
 </style>

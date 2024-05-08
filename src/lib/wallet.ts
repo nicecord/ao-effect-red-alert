@@ -14,7 +14,6 @@ async function getWalletKey() {
     const res = await fetch('/wallet.json')
     const key = await res.json()
     return key
-}
 
 function createDataItemSigner(wallet: Arbundles.JWKInterface) {
     const signer = async ({ data, tags, target, anchor }: any) => {
@@ -52,9 +51,6 @@ export async function arConnect {
 const arDisconnect = () => {
     (window as any).arweaveWallet.disconnect().then(() => (connected.value = false));
 }
-
-<<<<<<< HEAD
-=======
 export async function getArConnectActiveWallet() {
 	let address;
 	try {

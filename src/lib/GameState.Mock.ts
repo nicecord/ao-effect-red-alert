@@ -1,7 +1,9 @@
 import type { Player } from './Game.Grid';
+import { moveDirections, type MoveDirection } from './utils/path';
 
 let bots: Player[] = [];
-export function addRandomBot() {
+
+export function addRandomBot(id?: string) {
 	let x,
 		y,
 		attempts = 0;
@@ -18,9 +20,9 @@ export function addRandomBot() {
 	return addBot(
 		x,
 		y,
-		getRandomId(),
+		id || getRandomId(),
 		Math.floor(Math.random() * 100),
-		Math.floor(Math.random() * 100),
+		Math.floor(Math.random() * 20),
 		bots.length < 1
 		// Math.random() < 0.3
 	);
@@ -39,6 +41,7 @@ function getRandomColor() {
 	}
 	return color;
 }
+
 function isOccupied(row: number, col: number) {
 	return bots.some((bot) => bot.x === row && bot.y === col);
 }
@@ -46,9 +49,6 @@ function getRandomId() {
 	return Math.random().toString(36).substring(2, 10);
 }
 function addBot(row: number, col: number, id: string, health: number, energy: number, my: boolean) {
-	if (bots.length > 35) {
-		return bots;
-	}
 	bots = [
 		...bots,
 		{
@@ -63,4 +63,68 @@ function addBot(row: number, col: number, id: string, health: number, energy: nu
 		}
 	];
 	return bots;
+}
+function tick() {
+	for (const b of bots) {
+		const shouldIncrease = Math.random() < 0.5;
+		if (shouldIncrease) {
+			const sinceLastTurn = Date.now() - b.lastTurn;
+			const energyIncrease = Math.floor(sinceLastTurn / 3000);
+			b.energy = Math.min(100, b.energy + energyIncrease);
+		}
+
+		const shouldMove = Math.random() < 0.2;
+		if (shouldMove) {
+			const direction = Object.keys(moveDirections)[Math.floor(Math.random() * 8)] as MoveDirection;
+			b.lastTurn = Date.now();
+			playerMove(b, direction);
+		}
+	}
+}
+export function getMockPlayers(numberOfBots: number) {
+	if (bots.length === 0) {
+		for (let i = 0; i < numberOfBots; i++) {
+			addRandomBot();
+		}
+	}
+	tick();
+	return bots;
+}
+function playerMove(b: { x: number; y: number }, direction: MoveDirection) {
+	const { x, y } = moveDirections[direction];
+	const xN = Math.min(39, Math.max(0, b.x + x));
+	const yN = Math.min(39, Math.max(0, b.y + y));
+	if (!isOccupied(xN, yN)) {
+		b.x = xN;
+		b.y = yN;
+	}
+}
+export function move(playerId: string, direction: MoveDirection) {
+	const b = bots.find((b) => b.processId === playerId);
+	if (b) {
+		b.lastTurn = Date.now();
+		playerMove(b, direction);
+	}
+}
+function isInAttackRange(a: { x: number; y: number }, b: { x: number; y: number }, range: number) {
+	return Math.abs(a.x - b.x) <= range && Math.abs(a.y - b.y) <= range;
+}
+export function attack(playerId: string, energy: number, range: number) {
+	const player = bots.find((b) => b.processId === playerId);
+	if (player) {
+		player.lastTurn = Date.now();
+		const playersInRange = bots.filter((b) => {
+			return isInAttackRange(b, player, range) || playerId !== b.processId;
+		});
+		const attackEnergy = Math.min(player.energy, energy);
+		player.energy -= attackEnergy;
+		const damage = Math.floor(Math.random() * 2 * attackEnergy * (1 / 3));
+		for (const p of playersInRange) {
+			p.health -= damage;
+			if (p.health <= 0) {
+				removeBot(p.processId);
+				console.log('eliminate bot', p.processId);
+			}
+		}
+	}
 }

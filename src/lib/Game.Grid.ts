@@ -1,6 +1,13 @@
 import { removeDuplicates } from './utils/array.utils';
-import { dryrunAo, processesList, sendAOMessage } from './ao';
-import { arConnect, getArConnectActiveWallet } from './wallet';
+import { dryrunAo, sendMessageAo } from './ao';
+import { moveDirections, type MoveDirection } from './utils/path';
+import {
+	addRandomBot,
+	attack as attackMock,
+	getMockPlayers,
+	move as moveMock,
+	removeBot as removeBotMock
+} from './GameState.Mock';
 export const GRIDSIZE = 40;
 export const ATTACKRANGE = 3;
 
@@ -22,8 +29,15 @@ export type GameState = {
 		[k: string]: Player;
 	};
 };
+
 export async function getPlayers(gameId: string): Promise<Player[]> {
-	const result = await dryrunAo('', gameId, [
+	console.log('trying to get game state for', gameId);
+	if (!gameId) {
+		const players = getMockPlayers(30);
+		console.log(players);
+		return players;
+	}
+	const result = await dryrunAo(gameId, [
 		{
 			name: 'Action',
 			value: 'GetGameState'
@@ -33,10 +47,12 @@ export async function getPlayers(gameId: string): Promise<Player[]> {
 	const data = result?.Messages[0]?.Data as string;
 	if (data) {
 		const gameState = JSON.parse(data) as GameState;
-		return Object.entries(gameState.Players).map(([processId, player]) => {
+		const players = Object.entries(gameState.Players).map(([processId, player]) => {
 			player.processId = processId;
 			return player;
 		});
+		console.log(players);
+		return players;
 	}
 	return [];
 }
@@ -80,6 +96,17 @@ export function generateGridCells(): Cell[] {
 	}));
 }
 
+export function getPlayerMoveDirection(startCellId: number, targetCellId: number) {
+	const [sX, sY] = getCellXYById(startCellId);
+	const [tX, tY] = getCellXYById(targetCellId);
+	const dY = tY - sY;
+	const dX = tX - sX;
+	for (const [key, value] of Object.entries(moveDirections)) {
+		if (value.x === dX && value.y === dY) {
+			return key;
+		}
+	}
+}
 export function getAllCellsInAttackingRange(bots: Player[]) {
 	const cellInRange = [];
 	for (const bot of bots) {
@@ -90,44 +117,61 @@ export function getAllCellsInAttackingRange(bots: Player[]) {
 	return removeDuplicates(cellInRange) as number[];
 }
 
-export async function playerAttack(
-	myBot: string,
-	targetBot: string,
-	gameId: string,
-	attackingEnergy: number
-) {
-	console.log('attacking', myBot);
+export async function playerAttack(playerId: string, gameId: string, attackEnergy: number) {
+	if (!gameId) {
+		attackMock(playerId, attackEnergy, ATTACKRANGE);
+		return;
+	}
+	console.log('attacking', playerId);
 	const tags = [
-		{ name: 'AttackEnergy', value: attackingEnergy.toString() },
+		{ name: 'AttackEnergy', value: attackEnergy.toString() },
 		{ name: 'Action', value: 'Attack' },
 		{ name: 'Game', value: gameId }
 	];
-	const messageId = await sendAOMessage('', myBot, tags);
+	const messageId = await sendMessageAo('', playerId, tags);
 	console.log('attacking messageId', messageId);
 }
 
-export async function playerWithdraw(myBot: string, gameId: string) {
+export async function playerWithdraw(playerId: string, gameId: string) {
+	if (!gameId) {
+		removeBotMock(playerId);
+		return;
+	}
 	const tags = [
 		{ name: 'Action', value: 'Withdraw' },
 
 		{ name: 'Game', value: gameId }
 	];
-	const messageId = await sendAOMessage('', myBot, tags);
+	const messageId = await sendMessageAo('', playerId, tags);
 	console.log('withdraw messageId', messageId);
+	return messageId;
 }
 
-export async function playerJoin(myBot: string, gameId: string) {
+export async function playerMove(playerid: string, gameId: string, direction: MoveDirection) {
+	if (!gameId) {
+		moveMock(playerid, direction);
+		return;
+	}
 	const tags = [
-		{ name: 'Action', value: 'Withdraw' },
+		{ name: 'Action', value: 'Move' },
+
+		{ name: 'Game', value: gameId },
+		{ name: 'Direction', value: direction }
+	];
+	const messageId = await sendMessageAo('', playerid, tags);
+	return messageId;
+}
+
+export async function playerJoin(playerId: string, gameId: string) {
+	if (!gameId) {
+		addRandomBot(playerId);
+		return '';
+	}
+
+	const tags = [
+		{ name: 'Action', value: 'Join' },
 		{ name: 'Game', value: gameId }
 	];
-	const messageId = await sendAOMessage('', myBot, tags);
-	console.log('withdraw messageId', messageId);
-}
-
-async function getMyProcesses() {
-	await arConnect();
-	const activeAddress = await getArConnectActiveWallet();
-	const processList = await processesList(activeAddress);
-	return processList;
+	const messageId = await sendMessageAo('', playerId, tags);
+	console.log('join game messageId', messageId);
 }

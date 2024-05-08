@@ -95,7 +95,7 @@ function reconstructPath(cameFrom: Map<number, number>, current: number, start: 
 //         Left = {x = -1, y = 0}, Right = {x = 1, y = 0},
 //         UpRight = {x = 1, y = -1}, UpLeft = {x = -1, y = -1},
 //         DownRight = {x = 1, y = 1}, DownLeft = {x = -1, y = 1}
-const moveDirections = {
+export const moveDirections = {
 	Up: { x: 0, y: -1 },
 	Down: { x: 0, y: 1 },
 	Left: { x: -1, y: 0 },
@@ -105,6 +105,8 @@ const moveDirections = {
 	DownRight: { x: 1, y: 1 },
 	DownLeft: { x: 1, y: -1 }
 };
+
+export type MoveDirection = keyof typeof moveDirections;
 function isNeighbor(a: number, b: number) {
 	const neighbors = getNeighbors(a);
 	if (neighbors.includes(b)) {

@@ -17,9 +17,10 @@ const { result, results, message, spawn, monitor, unmonitor, dryrun } = connect(
 
 // now spawn, message, and result can be used the same way as if they were imported directly
 export const CRED = 'Sa0iBLPNyJQrwpTTG-tWLQU-1QeUAJA73DdxGGiKoJc';
+export const TRUNK = 'OT9qTE2467gcozb2g8R6D6N3nQS94ENcaAIJfUzHCww';
 // export async function transfer(amount: number, receipt: string, token: string) {
 
-export async function getTokenBalance(token: string, address: string) {
+export async function getTokenBalance(token: string, address: string): Promise<number> {
 	const result = await dryrun({
 		process: token,
 		tags: [
@@ -27,7 +28,6 @@ export async function getTokenBalance(token: string, address: string) {
 			{ name: 'Target', value: address }
 		]
 	});
-
 	return result.Messages[0].Data;
 }
 export async function getCREDBalance(address: string) {
@@ -72,7 +72,7 @@ export async function transferToken(token: string, to: string, qty: string) {
 }
 
 export async function transferToken(token: string, to: string, qty: string) {
-	const messageId = await sendAOMessage('', token, [
+	const messageId = await sendMessageAo('', token, [
 		{ name: 'Action', value: 'Transfer' },
 		{ name: 'Recipient', value: to },
 		{ name: 'Quantity', value: qty }
@@ -82,7 +82,7 @@ export async function transferToken(token: string, to: string, qty: string) {
 	return messageId;
 }
 
-export async function sendAOMessage(
+export async function sendMessageAo(
 	from: string,
 	targetProcess: string,
 	tags: { name: string; value: string }[]
@@ -96,11 +96,7 @@ export async function sendAOMessage(
 	return messageId;
 }
 
-export async function dryrunAo(
-	sender: string,
-	targetProcess: string,
-	tags: { name: string; value: string }[]
-) {
+export async function dryrunAo(targetProcess: string, tags: { name: string; value: string }[]) {
 	const result = await dryrun({
 		process: targetProcess,
 		tags
