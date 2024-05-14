@@ -5,6 +5,8 @@ const SELECTED_GAME_ID = '_selected_game_id';
 export const myPlayerProcesses = writable<PlayerLocalSetting[]>(getMyPlayerProcesses());
 export const selectedGameId = writable<string>(getSelectedGameId());
 
+export const playerWatchList = writable<string[]>([]);
+
 export type PlayerLocalSetting = {
 	processId: string;
 	name: string;

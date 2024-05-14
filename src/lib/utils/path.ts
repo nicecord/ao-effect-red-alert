@@ -1,32 +1,16 @@
-import { GRIDSIZE, getCellIdByXY, getCellXYById, type Cell } from '$lib/Game.Grid';
-export function findSimplePath(start: number, goal: number, grid: Cell[]) {
-	const { x: sX, y: sY } = grid[start];
-	const { x: gX, y: gY } = grid[goal];
-	console.log(sX, sY, gX, gY);
-	const path = [];
-	if (gY > sY) {
-		for (let dY = 1; dY <= gY - sY; dY++) {
-			path.push(getCellIdByXY(sX, sY + dY));
-		}
-	} else {
-		for (let dY = -1; dY >= gY - sY; dY--) {
-			path.push(getCellIdByXY(sX, sY + dY));
-		}
+import {
+	GRIDSIZE,
+	getAllCellsInAttackingRange,
+	getCellIdByXY,
+	getCellXYById
+} from '$lib/Game.Grid';
+export function findPath(start: number, goal: number, players: { x: number; y: number }[]) {
+	const dangerousCells = new Set(getAllCellsInAttackingRange(players));
+	if (start === goal) {
+		return [];
 	}
-	if (gX > sX) {
-		for (let dX = 1; dX <= gX - sX; dX++) {
-			path.push(getCellIdByXY(sX + dX, gY));
-		}
-	} else {
-		for (let dX = -1; dX >= gX - sX; dX--) {
-			path.push(getCellIdByXY(sX + dX, gY));
-		}
-	}
-	return path;
-}
-export function findPath(start: number, goal: number, grid: Cell[]) {
 	if (isNeighbor(start, goal)) {
-		return [goal, start];
+		return [start, goal];
 	}
 	const openSet = new Set([start]);
 	const cameFrom = new Map();
@@ -35,7 +19,7 @@ export function findPath(start: number, goal: number, grid: Cell[]) {
 	gScore.set(start, 0);
 
 	const fScore = new Map<number, number>();
-	fScore.set(start, heuristic(grid[start], grid[goal]));
+	fScore.set(start, heuristic(getCellXYById(start), getCellXYById(goal)));
 
 	while (openSet.size > 0) {
 		let current = null;
@@ -59,14 +43,17 @@ export function findPath(start: number, goal: number, grid: Cell[]) {
 
 		openSet.delete(current);
 		for (const neighbor of getNeighbors(current)) {
-			if (grid[neighbor].isDangerous) {
+			if (dangerousCells.has(neighbor)) {
 				continue;
 			}
 			const tentativeGScore = gScore.get(current)! + 1; // Assuming cost between nodes is 1
 			if (tentativeGScore < (gScore.get(neighbor) || Infinity)) {
 				cameFrom.set(neighbor, current);
 				gScore.set(neighbor, tentativeGScore);
-				fScore.set(neighbor, tentativeGScore + heuristic(grid[neighbor], grid[goal]));
+				fScore.set(
+					neighbor,
+					tentativeGScore + heuristic(getCellXYById(neighbor), getCellXYById(goal))
+				);
 				if (!openSet.has(neighbor)) {
 					openSet.add(neighbor);
 				}
@@ -77,9 +64,9 @@ export function findPath(start: number, goal: number, grid: Cell[]) {
 	return [];
 }
 
-function heuristic(a: Cell, b: Cell) {
+function heuristic(a: [number, number], b: [number, number]) {
 	// Manhattan distance on a square grid
-	return Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
+	return Math.abs(a[0] - b[0]) + Math.abs(a[1] - b[1]);
 }
 
 function reconstructPath(cameFrom: Map<number, number>, current: number, start: number) {
@@ -103,7 +90,7 @@ export const moveDirections = {
 	UpRight: { x: 1, y: -1 },
 	UpLeft: { x: -1, y: -1 },
 	DownRight: { x: 1, y: 1 },
-	DownLeft: { x: 1, y: -1 }
+	DownLeft: { x: -1, y: 1 }
 };
 
 export type MoveDirection = keyof typeof moveDirections;

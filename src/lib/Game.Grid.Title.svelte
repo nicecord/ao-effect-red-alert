@@ -1,6 +1,6 @@
-<h1 class="animate-fade-in m-4 text-center text-3xl">
+<h1 class="animate-fade-in text-1xl m-4">
 	THE GRID
-	<span class="text align-sub text-sm">Trinity Meets Neo, Blockchain Meets Scalability</span>
+	<span class="text text-xs">Trinity Meets Neo, Blockchain Meets Scalability</span>
 </h1>
 
 <style lang="postcss">

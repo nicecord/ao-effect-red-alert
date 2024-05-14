@@ -21,7 +21,7 @@
 	<select
 		bind:value={$selectedGameId}
 		on:change={handleChange}
-		class="min-w-28 appearance-none rounded-md border border-gray-300 bg-white px-4 py-2 shadow-sm focus:border-blue-500 focus:outline-none"
+		class="min-w-42 appearance-none rounded-md border border-gray-300 bg-white px-4 py-2 shadow-sm focus:border-blue-500 focus:outline-none"
 	>
 		{#each gameList as { name, processId }}
 			<option value={processId}>{name}</option>

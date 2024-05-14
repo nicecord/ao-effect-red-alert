@@ -6,7 +6,7 @@
 		const player = {
 			processId: formData.get('processId') as string,
 			name: formData.get('name') as string,
-			ownerProcessId: formData.get('ownerProcessId') as string
+			ownerProcessId: (formData.get('ownerProcessId') || 'na') as string
 		};
 
 		addMyPlayerProcess(player);
@@ -38,7 +38,7 @@
 		class="input-field"
 		placeholder="Bot Name"
 	/>
-	<input
+	<!-- <input
 		autocomplete="off"
 		type="text"
 		id="ownerProcessId"
@@ -46,7 +46,7 @@
 		required
 		class="input-field"
 		placeholder="Owner Process ID"
-	/>
+	/> -->
 	<button type="submit" class="btn-add-player">Add Player</button>
 </form>
 

@@ -2,20 +2,37 @@
 	import Bot from './Game.Control.Bot.svelte';
 	import Settings from './Game.Control.Settings.svelte';
 	import { type Player } from './Game.Grid';
-	import { isWalletConnected, activeAddress } from './stores/wallet';
+	import { playerWatchList } from './stores/game';
+	import { createEventDispatcher } from 'svelte';
 	export let players: Player[];
-
-	let activeTab = 'manage';
+	const dispatch = createEventDispatcher();
+	let activeTab = 'players';
 
 	// Function to switch between tabs
 	function switchTab(tab: string) {
 		activeTab = tab;
 	}
 
-	// Function to handle adding players
-	function addPlayer() {
-		// Implement your logic here
+	function handlePlayerChecked(event: CustomEvent<{ playerId: string; isChecked: boolean }>) {
+		console.log('player checked', event.detail);
+		const { playerId, isChecked } = event.detail;
+		const index = $playerWatchList.findIndex((v) => v === playerId);
+		if (isChecked) {
+			if (index < 0) {
+				$playerWatchList = [...$playerWatchList, playerId];
+			}
+		} else {
+			if (index >= 0) {
+				$playerWatchList.splice(index, 1);
+				$playerWatchList = $playerWatchList;
+			}
+		}
 	}
+
+	function handlePlayerAction(playerId: string, action: string) {
+		dispatch('playerAction', { playerId, action });
+	}
+	// Function to handle adding players
 
 	// Function to handle managing players
 	$: players = players
@@ -50,14 +67,15 @@
 			class:opacity-50={activeTab === 'manage'}
 			on:click={() => switchTab('manage')}
 		>
-			My Trunk
+			My Team
 		</button>
 	</div>
 
 	<!-- Tab content -->
 	{#if activeTab === 'players'}
+		<span> total Players: {players?.length}</span> <span> </span>
 		<ul>
-			{#each players as player}
+			{#each players as player (player.processId)}
 				<Bot
 					my={player.my}
 					name={player.name}
@@ -65,6 +83,9 @@
 					health={player.health}
 					energy={player.energy}
 					lastTurn={player.lastTurn}
+					isChecked={$playerWatchList.includes(player.processId)}
+					on:playerChecked={handlePlayerChecked}
+					{handlePlayerAction}
 				/>
 			{/each}
 		</ul>

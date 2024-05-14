@@ -31,9 +31,9 @@ export type GameState = {
 };
 
 export async function getPlayers(gameId: string): Promise<Player[]> {
-	console.log('trying to get game state for', gameId);
+	// console.log('trying to get game state for', gameId);
 	if (!gameId) {
-		const players = getMockPlayers(30);
+		const players = getMockPlayers(10);
 		console.log(players);
 		return players;
 	}
@@ -57,23 +57,23 @@ export async function getPlayers(gameId: string): Promise<Player[]> {
 	return [];
 }
 
-export function getCellXYById(id: number) {
-	return [Math.floor(id / GRIDSIZE) + 1, (id % GRIDSIZE) + 1];
+export function getCellXYById(id: number): [number, number] {
+	return [(id % GRIDSIZE) + 1, Math.floor(id / GRIDSIZE) + 1];
 }
 
-export function getCellIdByXY(row: number, col: number) {
-	return (row - 1) * GRIDSIZE + col - 1;
+export function getCellIdByXY(x: number, y: number) {
+	return (y - 1) * GRIDSIZE + x - 1;
 }
 
-export function getCellsInAttackRange(row: number, col: number, range: number = ATTACKRANGE) {
-	const rowRangeMin = Math.max(1, row - range);
-	const rowRangeMax = Math.min(GRIDSIZE, row + range);
-	const colRangeMin = Math.max(1, col - range);
-	const colRangeMax = Math.min(GRIDSIZE, col + range);
+export function getCellsInAttackRange(x: number, y: number, range: number = ATTACKRANGE) {
+	const xRangeMin = Math.max(1, x - range);
+	const xRangeMax = Math.min(GRIDSIZE, x + range);
+	const yRangeMin = Math.max(1, y - range);
+	const yRangeMax = Math.min(GRIDSIZE, y + range);
 	const cellsInRange = [];
-	for (let row = rowRangeMin; row <= rowRangeMax; row++) {
-		for (let col = colRangeMin; col <= colRangeMax; col++) {
-			cellsInRange.push(getCellIdByXY(row, col));
+	for (let y = yRangeMin; y <= yRangeMax; y++) {
+		for (let x = xRangeMin; x <= xRangeMax; x++) {
+			cellsInRange.push(getCellIdByXY(x, y));
 		}
 	}
 	return cellsInRange;
@@ -87,37 +87,43 @@ export type Cell = {
 };
 
 export function generateGridCells(): Cell[] {
-	return Array.from({ length: GRIDSIZE * GRIDSIZE }, (_, i) => ({
-		id: i,
-		x: Math.floor(i / GRIDSIZE) + 1,
-		y: (i % GRIDSIZE) + 1,
-		isDangerous: false,
-		content: '' // This can be modified to include data like player or obstacle
-	}));
+	return Array.from({ length: GRIDSIZE * GRIDSIZE }, (_, i) => {
+		const [x, y] = getCellXYById(i);
+		return {
+			id: i,
+			x,
+			y,
+			isDangerous: false,
+			content: '' // This can be modified to include data like player or obstacle
+		};
+	});
 }
 
-export function getPlayerMoveDirection(startCellId: number, targetCellId: number) {
+export function getPlayerMoveDirection(
+	startCellId: number,
+	targetCellId: number
+): MoveDirection | undefined {
 	const [sX, sY] = getCellXYById(startCellId);
 	const [tX, tY] = getCellXYById(targetCellId);
 	const dY = tY - sY;
 	const dX = tX - sX;
 	for (const [key, value] of Object.entries(moveDirections)) {
 		if (value.x === dX && value.y === dY) {
-			return key;
+			return key as MoveDirection;
 		}
 	}
 }
-export function getAllCellsInAttackingRange(bots: Player[]) {
+export function getAllCellsInAttackingRange(bots: { x: number; y: number }[]) {
 	const cellInRange = [];
 	for (const bot of bots) {
-		if (!bot.my) {
-			cellInRange.push(...getCellsInAttackRange(bot.x, bot.y));
-		}
+		cellInRange.push(...getCellsInAttackRange(bot.x, bot.y));
 	}
 	return removeDuplicates(cellInRange) as number[];
 }
 
 export async function playerAttack(playerId: string, gameId: string, attackEnergy: number) {
+	console.log('attacking', playerId, attackEnergy);
+
 	if (!gameId) {
 		attackMock(playerId, attackEnergy, ATTACKRANGE);
 		return;

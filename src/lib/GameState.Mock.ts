@@ -65,6 +65,7 @@ function addBot(row: number, col: number, id: string, health: number, energy: nu
 	return bots;
 }
 function tick() {
+	bots[0].energy = 100;
 	for (const b of bots) {
 		const shouldIncrease = Math.random() < 0.5;
 		if (shouldIncrease) {
@@ -73,7 +74,7 @@ function tick() {
 			b.energy = Math.min(100, b.energy + energyIncrease);
 		}
 
-		const shouldMove = Math.random() < 0.2;
+		const shouldMove = Math.random() < 0.2 && b !== bots[0];
 		if (shouldMove) {
 			const direction = Object.keys(moveDirections)[Math.floor(Math.random() * 8)] as MoveDirection;
 			b.lastTurn = Date.now();
@@ -84,7 +85,7 @@ function tick() {
 export function getMockPlayers(numberOfBots: number) {
 	if (bots.length === 0) {
 		for (let i = 0; i < numberOfBots; i++) {
-			addRandomBot();
+			addRandomBot(i + '_bot_bot');
 		}
 	}
 	tick();
@@ -92,8 +93,8 @@ export function getMockPlayers(numberOfBots: number) {
 }
 function playerMove(b: { x: number; y: number }, direction: MoveDirection) {
 	const { x, y } = moveDirections[direction];
-	const xN = Math.min(39, Math.max(0, b.x + x));
-	const yN = Math.min(39, Math.max(0, b.y + y));
+	const xN = Math.min(40, Math.max(1, b.x + x));
+	const yN = Math.min(40, Math.max(1, b.y + y));
 	if (!isOccupied(xN, yN)) {
 		b.x = xN;
 		b.y = yN;
@@ -114,12 +115,13 @@ export function attack(playerId: string, energy: number, range: number) {
 	if (player) {
 		player.lastTurn = Date.now();
 		const playersInRange = bots.filter((b) => {
-			return isInAttackRange(b, player, range) || playerId !== b.processId;
+			return isInAttackRange(b, player, range) && playerId !== b.processId;
 		});
 		const attackEnergy = Math.min(player.energy, energy);
 		player.energy -= attackEnergy;
 		const damage = Math.floor(Math.random() * 2 * attackEnergy * (1 / 3));
 		for (const p of playersInRange) {
+			console.log('process under attack', p.processId);
 			p.health -= damage;
 			if (p.health <= 0) {
 				removeBot(p.processId);

@@ -9,8 +9,8 @@
 	export let processId: string;
 	export let ownerProcessId: string;
 	export let onRemove: (botProcessId: string) => void; // Function passed from parent to handle bot removal
-	// $: isFullFeature = $activeAddress?.eligible;
-	$: isFullFeature = true;
+	$: isFullFeature = $activeAddress?.eligible;
+	// $: isFullFeature = true;
 	const disabledExplanation =
 		'Connect a wallet and own at least 0.1 TRUNK tokens to enable this feature.';
 	// Function to handle token transfer
@@ -40,9 +40,9 @@
 		</p>
 	</div>
 	<div class="mb-1 flex items-center justify-between">
-		<p class="mb-1 text-sm text-gray-700">
+		<!-- <p class="mb-1 text-sm text-gray-700">
 			Owner: {shortenAOAddress(ownerProcessId)}
-		</p>
+		</p> -->
 		<p class="mb-1 text-sm text-gray-700">
 			Ver: {#await getBotState(processId)}
 				...

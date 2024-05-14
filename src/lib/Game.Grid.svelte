@@ -15,34 +15,62 @@
 	} from './Game.Grid';
 	import GameControl from './Game.Control.svelte';
 	import { findPath } from './utils/path';
-	import { myPlayerProcesses } from './stores/game';
+	import { myPlayerProcesses, playerWatchList } from './stores/game';
 	import Title from './Game.Grid.Title.svelte';
-	import { getMockPlayers } from './GameState.Mock';
 	export let gameId = '';
 	let cells = generateGridCells();
 	let players: Player[] = [];
 	let selectedPlayerId: string = '';
 	let selectedCellId: number | undefined;
-	let paths: number[] = [];
 	// $: isDemoMode = !gameId;
-	$: updateCells(players);
+	$: updateCells(players, $myPlayerProcesses);
 	$: updatePlayers(players, $myPlayerProcesses);
+	$: plannedPath = findPlannedPath(selectedPlayerId, selectedCellId, players);
 
-	function pathToTarget(playerId: string, goal: number | undefined, cells: Cell[]) {
-		if (!selectedPlayerId || goal === undefined) {
+	function findPlannedPath(
+		playerId: string,
+		targetCellId: number | undefined,
+		players: { processId: string; x: number; y: number }[]
+	) {
+		if (playerId && targetCellId && players.length > 0) {
+			const player = players.find((p) => p.processId === playerId);
+			if (!player) {
+				return [];
+			}
+			const sourceCellId = getCellIdByXY(player.x, player.y);
+
+			if (sourceCellId === targetCellId) {
+				return [];
+			}
+
+			const foundPath = findPath(
+				sourceCellId,
+				targetCellId,
+				players.filter((p) => p.processId !== playerId)
+			);
+
+			if (foundPath.length < 2) {
+				return [];
+			}
+
+			console.log('find path', foundPath);
+			const moveDirection = getPlayerMoveDirection(foundPath[0], foundPath[1]);
+			if (moveDirection) {
+				console.log('playing moving', selectedPlayerId, moveDirection);
+				playerMove(selectedPlayerId, gameId, moveDirection).then((m) =>
+					console.log('moving message id', m)
+				);
+			}
+			return foundPath;
+		} else {
 			return [];
 		}
-		const player = players.find((p) => p.processId === playerId);
-		if (!player) {
-			return [];
-		}
-		const paths = findPath(getCellIdByXY(player.x, player.y), goal, cells);
-		console.log('find path', paths);
-		return paths;
 	}
 
-	function updateCells(players: Player[]) {
-		const dangerousCells = getAllCellsInAttackingRange(players);
+	function updateCells(players: Player[], myPlayers: { processId: string }[]) {
+		const dangerousCells = getAllCellsInAttackingRange(
+			players.filter((p) => !myPlayers.some((m) => m.processId === p.processId))
+		);
 		for (const cell of cells) {
 			cell.isDangerous = false;
 		}
@@ -59,7 +87,7 @@
 	}
 
 	function getBotById(id: string) {
-		return players.find((bot) => (bot.processId = id));
+		return players.find((bot) => bot.processId === id);
 	}
 
 	function clickCell(event: MouseEvent) {
@@ -79,22 +107,6 @@
 				}
 			}
 		}
-
-		if (selectedCellId && selectedPlayerId) {
-			const plannedPaths = pathToTarget(selectedPlayerId, selectedCellId, cells);
-
-			if (plannedPaths.length < 2) {
-				return;
-			}
-			paths = plannedPaths;
-			const moveDirection = getPlayerMoveDirection(plannedPaths[0], plannedPaths[1]);
-			if (moveDirection) {
-				console.log('playing moving', selectedPlayerId, moveDirection);
-				playerMove(selectedPlayerId, gameId, moveDirection).then((m) =>
-					console.log('moving message id', m)
-				);
-			}
-		}
 	}
 
 	// Handle the click event on the grid cell
@@ -102,28 +114,27 @@
 
 	function clickBot(id: string) {
 		const bot = getBotById(id);
+		console.log('clic bot', id);
 		if (!bot) {
 			return;
 		}
-		if (bot.my) {
-			if (id === selectedPlayerId) {
-				selectedPlayerId = '';
-				selectedCellId = undefined;
-			} else {
-				selectedPlayerId = id;
-			}
+		if (id === selectedPlayerId) {
+			selectedPlayerId = '';
+			selectedCellId = undefined;
 			return;
 		}
 
-		if (selectedPlayerId) {
-			playerAttack(selectedPlayerId, id, gameId, bot.energy);
+		if (selectedPlayerId && getBotById(selectedPlayerId)) {
+			playerAttack(selectedPlayerId, gameId, bot.energy);
+			return;
 		}
+		selectedPlayerId = id;
 	}
 
 	async function attack(id: string) {
 		const bot = getBotById(id);
 		if (bot) {
-			const messageId = await playerAttack(id, '', gameId, bot.energy);
+			const messageId = await playerAttack(id, gameId, bot.energy);
 			console.log('attack meesage id', messageId);
 		}
 	}
@@ -133,6 +144,27 @@
 		if (bot) {
 			const messageId = await playerWithdraw(id, gameId);
 			console.log('withdraw', messageId);
+		}
+	}
+
+	async function handlePlayerAction(
+		event: CustomEvent<{ action: 'withdraw' | 'attack'; playerId: string }>
+	) {
+		console.log('handle player action', event.detail);
+		switch (event.detail.action) {
+			case 'attack':
+				await attack(event.detail.playerId);
+				return;
+			case 'withdraw':
+				await withdraw(event.detail.playerId);
+				return;
+		}
+	}
+	async function handleKeydown(event: KeyboardEvent) {
+		if (event.code === 'KeyA') {
+			if (selectedPlayerId) {
+				await attack(selectedPlayerId);
+			}
 		}
 	}
 	onMount(() => {
@@ -148,6 +180,7 @@
 </script>
 
 <Title />
+<svelte:window on:keydown={handleKeydown} />
 <div class="ml-2 flex border">
 	<div class="relative">
 		<div
@@ -155,11 +188,11 @@
 			aria-hidden="true"
 			class="grid grid-cols-[repeat(40,20px)] grid-rows-[repeat(40,20px)] justify-items-stretch"
 		>
-			{#each cells as cell}
+			{#each cells as cell (cell.id)}
 				<div
 					class="cell border border-gray-300 {cell.id == selectedCellId
 						? 'bg-gray-300'
-						: 'bg-gray-100'} {paths.includes(cell.id) && 'bg-gray-200'}
+						: 'bg-gray-100'} {plannedPath.includes(cell.id) && 'bg-gray-200'}
 						hover:scale-125"
 					data-cell-id={cell.id}
 					class:isDangerous={cell.isDangerous}
@@ -168,31 +201,13 @@
 			{/each}
 		</div>
 
-		{#each players as bot}
-			{#if bot.processId === selectedPlayerId}
-				<div
-					class="options-popup"
-					style="top: {(bot.x - 1) * 20 - 20}px; left: {(bot.y - 1) * 20 + 20}px"
-				>
-					<button
-						on:click|stopPropagation={async () => await withdraw(bot.processId)}
-						class="icon-button"
-					>
-						<i class="fas fa-door-open" style="color: green;"></i>
-					</button>
-					<button
-						on:click|stopPropagation={async () => await attack(bot.processId)}
-						class="icon-button"
-					>
-						<i class="fa fa-bolt" style="color: red;"></i>
-					</button>
-				</div>
-			{/if}
+		{#each players as bot (bot.processId)}
 			<button
 				class:isMy={bot.my}
+				class:underWatch={$playerWatchList.includes(bot.processId)}
 				class:isSelected={bot.processId === selectedPlayerId}
-				class="bot absolute z-10 flex flex-col justify-start rounded border bg-opacity-10 p-[1px]"
-				style="top: {(bot.x - 1) * 20}px; left: {(bot.y - 1) * 20}px"
+				class="bot absolute z-10 flex flex-col justify-start rounded border border-red-500 bg-opacity-10 p-[1px]"
+				style="top: {(bot.y - 1) * 20}px; left: {(bot.x - 1) * 20}px"
 				transition:fly={{ duration: 300, delay: 0 }}
 				on:click={() => {
 					clickBot(bot.processId);
@@ -209,7 +224,7 @@
 		{/each}
 	</div>
 	<div class="ml-1 w-96 border">
-		<GameControl {players} />
+		<GameControl {players} on:playerAction={handlePlayerAction} />
 	</div>
 </div>
 
@@ -243,19 +258,25 @@
 	.bot {
 		width: 20px;
 		height: 20px;
-		transition: transform 0.3s ease-in-out;
+		transition: all 1s ease-in-out;
+		@apply scale-150;
 	}
 	.bot.isMy {
 		animation: isMyBot 1s infinite;
+		@apply bg-teal-500;
 	}
 
+	.bot.underWatch {
+		@apply scale-150;
+		@apply bg-orange-400;
+	}
 	.bot.isSelected {
-		animation: rotateBot 5s linear infinite;
+		@apply ring-8;
 	}
 
 	.cell.isDangerous {
 		@apply /*
-		animation: dangerousZone 1s infinite; */ bg-red-100;
+		animation: dangerousZone 1s infinite; */ bg-red-50;
 	}
 	.health-meter {
 		width: 100%;
